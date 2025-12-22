@@ -9,16 +9,16 @@ import { Button } from "./components/ui/button"
 import { Search, MessageSquare, Plus, FolderPlus, XCircle } from "lucide-react" // Import XCircle for clear button
 import type { Note } from "./types/note"
 import type { Notebook } from "./types/notebook"
-import { mockNotebooks } from "./lib/mock-data"
+import { mockNotebooks, mockNotes } from "./lib/mock-data"
 import "./App.css"
 import axios from "axios"
 import type { BaseResponse } from "./dto/base-response"
-import type { CreateNotebookRequest, CreateNotebookResponse, GetAllNotebookResponse } from "./dto/notebook"
+import type { GetAllNotebookResponse } from "./dto/notebook"
 import { AppConfig } from "./config/config"
 
 export default function App() {
   const [notebooks, setNotebooks] = useState<Notebook[]>(mockNotebooks)
-  const [notes, setNotes] = useState<Note[]>([])
+  const [notes, setNotes] = useState<Note[]>(mockNotes)
   const [selectedNotebook, setSelectedNotebook] = useState<string | null>(null)
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -32,12 +32,11 @@ export default function App() {
 
   const currentNote = notes.find((note) => note.id === selectedNote)
 
-  useEffect(() => {
     const fetchAllNotebooks = async () => {
-      const data = await axios.get<BaseResponse<GetAllNotebookResponse[]>>(`${AppConfig}/api/notebook/v1`)
+      const data = await axios.get<BaseResponse<GetAllNotebookResponse[]>>(`${AppConfig.baseUrl}/api/notebook/v1`)
 
       console.log(data.data)
-      
+
       setNotebooks(data.data.data.map(notebooks =>({
         id: notebooks.id,
         name: notebooks.name,
@@ -48,6 +47,9 @@ export default function App() {
       })      ))
 
     }
+
+  useEffect(() => {
+  
     fetchAllNotebooks()
   }, [])
 
@@ -185,12 +187,14 @@ export default function App() {
 
     setIsCreatingNotebook(true)
 
-    const request: CreateNotebookRequest = {
+    const request = {
       name: "New Notebook",
-      parent_id: selectedNotebook || null
+      parent_id: selectedNotebook || null, // This correctly uses null if selectedNotebook is null
     }
 
-    await axios.post<BaseResponse<CreateNotebookResponse>>(`${AppConfig}/api/notebook/v1`, request)
+    await axios.post(`${AppConfig.baseUrl}/api/notebook/v1`, request)
+
+    await fetchAllNotebooks()
 
     // Auto-expand parent notebook when adding a child notebook
     if (selectedNotebook) {
