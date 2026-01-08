@@ -21,3 +21,22 @@ export interface CreateSessionResponse {
 export interface DeleteSesionRequest {
   chat_session_id: string;
 }
+
+export interface SendChatRequest {
+  chat_session_id: string;
+  chat: string;
+}
+
+export interface SendChatResponseChat {
+  id: string;
+  role: string;
+  content: string;
+  created_at: Date;
+}
+
+export interface SendChatResponse {
+  chat_session_id: string;
+  title : string;
+  sent : SendChatResponseChat;
+  reply : SendChatResponseChat;
+}

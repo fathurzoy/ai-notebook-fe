@@ -16,6 +16,8 @@ import type {
   DeleteSesionRequest,
   GetAllSessionsResponse,
   GetChatHistoryResponse,
+  SendChatRequest,
+  SendChatResponse,
 } from "@/dto/chatbot";
 import axios from "axios";
 
@@ -110,64 +112,67 @@ export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
   const handleSend = async () => {
     if (!input.trim() || isLoading || !activeSession) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
+    setInput("");
+    setIsLoading(true);
 
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === activeSessionId) {
-          const updatedMessages = [...s.messages, userMessage];
-          let updatedName = s.name;
-
-          const hasOnlyInitialAssistantMessage =
-            s.messages.length === 1 && s.messages[0].role === "assistant";
-
-          if (hasOnlyInitialAssistantMessage) {
-            updatedName =
-              userMessage.content.substring(0, 30) +
-              (userMessage.content.length > 30 ? "..." : "");
-          }
-
           return {
             ...s,
-            name: updatedName,
-            messages: updatedMessages,
-            updatedAt: new Date(),
-          };
+            messages: [
+              ...s.messages,
+              {
+                id: "test",
+                role: "user",
+                content: input,
+                timestamp: new Date(),
+              },
+            ],
+          };    
         }
         return s;
       })
     );
 
-    setInput("");
-    setIsLoading(true);
+    const request : SendChatRequest={
+      chat_session_id: activeSessionId,
+      chat: input
+    };
 
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: generateAIResponse(input, notes),
-        timestamp: new Date(),
-      };
+    const res = await axios.post<BaseResponse<SendChatResponse>>(
+      `${AppConfig.baseUrl}/api/chatbot/v1/send-chat`,
+      request
+    );
 
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === activeSessionId
-            ? {
-                ...s,
-                messages: [...s.messages, aiResponse],
-                updatedAt: new Date(),
-              }
-            : s
-        )
-      );
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id === activeSessionId) {
+          return {
+            ...s,
+            name: res.data.data.title,
+            messages: [
+              ...s.messages.slice(0, -1),
+              {
+                id: res.data.data.sent.id,
+                role: res.data.data.sent.role === "model" ? "assistant" : "user",
+                content: res.data.data.sent.content,
+                timestamp: new Date(res.data.data.sent.created_at),
+              },
+              {
+                id: res.data.data.reply.id,
+                role: res.data.data.reply.role === "model" ? "assistant" : "user",
+                content: res.data.data.reply.content,
+                timestamp: new Date(res.data.data.reply.created_at),
+              },
+            ],
+          };    
+        }
+        return s;
+      })
+    );
 
-      setIsLoading(false);
-    }, 1000);
+    setIsLoading(false);
   };
 
   const generateAIResponse = (query: string, notes: Note[]): string => {
