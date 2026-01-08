@@ -5,3 +5,10 @@ export interface GetAllSessionsResponse {
   created_at: Date;
   updated_at: Date | null;
 }
+
+export interface GetChatHistoryResponse {
+  id: string;
+  role: string;
+  content: string;
+  timestamp: Date;
+}
