@@ -19,7 +19,12 @@ import type {
   MoveNotebookResponse,
 } from "./dto/notebook";
 import { AppConfig } from "./config/config";
-import type { CreateNoteRequest, CreateNoteResponse } from "./dto/note";
+import type {
+  CreateNoteRequest,
+  CreateNoteResponse,
+  UpdateNoteRequest,
+  UpdateNoteResponse,
+} from "./dto/note";
 
 export default function App() {
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
@@ -79,14 +84,16 @@ export default function App() {
     fetchAllNotebooks();
   }, []);
 
-  const handleNoteUpdate = (noteId: string, updates: Partial<Note>) => {
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === noteId
-          ? { ...note, ...updates, updatedAt: new Date() }
-          : note
-      )
+  const handleNoteUpdate = async (noteId: string, updates: Partial<Note>) => {
+    const request: UpdateNoteRequest = {
+      title: updates.title ?? "",
+      content: updates.content ?? "",
+    };
+    await axios.put<BaseResponse<UpdateNoteResponse>>(
+      `${AppConfig.baseUrl}/api/note/v1/${noteId}`,
+      request
     );
+    fetchAllNotebooks();
   };
 
   const handleNotebookUpdate = (
