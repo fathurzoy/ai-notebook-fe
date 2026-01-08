@@ -17,8 +17,8 @@ import type { GetAllNotebookResponse, MoveNotebookRequest, MoveNotebookResponse 
 import { AppConfig } from "./config/config"
 
 export default function App() {
-  const [notebooks, setNotebooks] = useState<Notebook[]>(mockNotebooks)
-  const [notes, setNotes] = useState<Note[]>(mockNotes)
+  const [notebooks, setNotebooks] = useState<Notebook[]>([])
+  const [notes, setNotes] = useState<Note[]>([])
   const [selectedNotebook, setSelectedNotebook] = useState<string | null>(null)
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -41,11 +41,26 @@ export default function App() {
         id: notebooks.id,
         name: notebooks.name,
         parentId: notebooks.parent_id,
-        createdAt: new Date(notebooks.created_at
-        ),
+        createdAt: new Date(notebooks.created_at),
         updatedAt: new Date(notebooks.updated_at) ?? new Date(notebooks.created_at),
       })      ))
 
+      const notes = data.data.data.reduce<Note[]>(
+      (currentNote, notebook) => {
+        return  [
+          ...currentNote,
+          ...notebook.notes.map(note => ({
+            id: note.id,
+            title: note.title,
+            content: note.content,
+            notebookId: notebook.id,
+            createdAt: new Date(note.created_at),
+            updatedAt: new Date(note.updated_at ?? note.created_at),
+          }))
+        ]
+      },[]
+      )
+      setNotes(notes)
     }
 
   useEffect(() => {
