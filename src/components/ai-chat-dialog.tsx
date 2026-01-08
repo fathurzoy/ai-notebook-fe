@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog"
 import { Button } from "./ui/button"
 import { Textarea } from "./ui/textarea"
@@ -9,6 +9,10 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Send, Bot, User, Plus, Trash2 } from "lucide-react"
 import type { Note } from "../types/note"
 import type { ChatSession, Message } from "@/types/ai-chat"
+import { AppConfig } from "@/config/config"
+import type { BaseResponse } from "@/dto/base-response"
+import type { GetAllSessionsResponse } from "@/dto/chatbot"
+import axios from "axios"
 
 interface AIChatDialogProps {
     open: boolean
@@ -18,23 +22,7 @@ interface AIChatDialogProps {
 
 export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
     const [input, setInput] = useState("")
-    const [sessions, setSessions] = useState<ChatSession[]>([
-        {
-            id: "session-1",
-            name: "New Chat",
-            messages: [
-                {
-                    id: "1",
-                    role: "assistant",
-                    content:
-                        "Hello! I can help you find information from your notes or answer questions based on your knowledge base. What would you like to know?",
-                    timestamp: new Date(),
-                },
-            ],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        },
-    ])
+    const [sessions, setSessions] = useState<ChatSession[]>([])
     const [activeSessionId, setActiveSessionId] = useState("session-1")
     const [isLoading, setIsLoading] = useState(false)
 
@@ -144,6 +132,26 @@ export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
             handleSend()
         }
     }
+
+    useEffect(()=>{
+        const fetchData = async () => {
+            const res = await axios.get<BaseResponse<GetAllSessionsResponse[]>>(`${AppConfig.baseUrl}/api/chatbot/v1/sessions`)
+            setSessions(res.data.data.map(session => ({
+                id: session.id,
+                name: session.title,
+                messages: [],
+                createdAt: new Date(session.created_at),
+                updatedAt: new Date(session.updated_at ?? session.created_at ),
+            })))
+            setActiveSessionId(res.data.data[0].id)
+        }
+
+        if (open){
+            fetchData()
+        }
+        
+       
+    },[open])
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
