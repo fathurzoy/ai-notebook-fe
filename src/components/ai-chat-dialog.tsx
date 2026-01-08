@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import ReactMarkdown from "react-markdown";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
@@ -129,15 +130,15 @@ export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
                 timestamp: new Date(),
               },
             ],
-          };    
+          };
         }
         return s;
       })
     );
 
-    const request : SendChatRequest={
+    const request: SendChatRequest = {
       chat_session_id: activeSessionId,
-      chat: input
+      chat: input,
     };
 
     const res = await axios.post<BaseResponse<SendChatResponse>>(
@@ -155,18 +156,20 @@ export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
               ...s.messages.slice(0, -1),
               {
                 id: res.data.data.sent.id,
-                role: res.data.data.sent.role === "model" ? "assistant" : "user",
+                role:
+                  res.data.data.sent.role === "model" ? "assistant" : "user",
                 content: res.data.data.sent.content,
                 timestamp: new Date(res.data.data.sent.created_at),
               },
               {
                 id: res.data.data.reply.id,
-                role: res.data.data.reply.role === "model" ? "assistant" : "user",
+                role:
+                  res.data.data.reply.role === "model" ? "assistant" : "user",
                 content: res.data.data.reply.content,
                 timestamp: new Date(res.data.data.reply.created_at),
               },
             ],
-          };    
+          };
         }
         return s;
       })
@@ -208,9 +211,8 @@ export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
   useEffect(() => {
     const fetchList = async () => {
       const newSessions = await fetchData();
-      if (newSessions.length > 0){
-      sessionClickHandler(sessions[0]?.id || "");
-        
+      if (newSessions.length > 0) {
+        sessionClickHandler(sessions[0]?.id || "");
       }
     };
     if (open) {
@@ -320,9 +322,17 @@ export function AIChatDialog({ open, onOpenChange, notes }: AIChatDialogProps) {
                             : "bg-gradient-to-r from-gray-50 to-gray-100 text-gray-900 border border-gray-200"
                         }`}
                       >
-                        <div className="text-sm whitespace-pre-wrap">
-                          {message.content}
-                        </div>
+                        {message.role === "assistant" && (
+                          <ReactMarkdown className={"prose prose-sm"}>
+                            {message.content}
+                          </ReactMarkdown>
+                        )}
+                        {message.role === "user" && (
+                          <div className="text-sm whitespace-pre-wrap">
+                            {message.content}
+                          </div>
+                        )}
+
                         <div
                           className={`text-xs mt-1 ${
                             message.role === "user"
