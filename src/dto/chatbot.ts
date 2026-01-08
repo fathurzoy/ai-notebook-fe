@@ -16,3 +16,8 @@ export interface GetChatHistoryResponse {
 export interface CreateSessionResponse {
   id: string;
 }
+
+
+export interface DeleteSesionRequest {
+  chat_session_id: string;
+}
