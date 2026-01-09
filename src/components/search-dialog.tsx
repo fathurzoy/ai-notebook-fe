@@ -6,6 +6,10 @@ import { Input } from "./ui/input"
 import { Button } from "./ui/button"
 import { Search, FileText } from "lucide-react"
 import type { Note } from "../types/note"
+import axios from "axios"
+import { AppConfig } from "@/config/config"
+import type { BaseResponse } from "@/dto/base-response"
+import type { GetSemanticSearchResponse } from "@/dto/note"
 
 interface SearchDialogProps {
     open: boolean
@@ -28,18 +32,21 @@ function SearchDialog({ open, onOpenChange, notes, onNoteSelect }: SearchDialogP
         setIsSearching(true)
 
         // Simulate semantic search with a delay
-        const searchTimeout = setTimeout(() => {
-            const searchResults = notes
-                .filter((note) => {
-                    const searchText = `${note.title} ${note.content}`.toLowerCase()
-                    const searchQuery = query.toLowerCase()
+        const searchTimeout = setTimeout(async() => {
+            
+            const res = await axios.get<BaseResponse<GetSemanticSearchResponse[]>>(`${AppConfig.baseUrl}/api/note/v1/simantic-search?q=${query}`)
 
-                    // Simple text matching - in a real app, this would be semantic search
-                    return searchText.includes(searchQuery)
-                })
-                .slice(0, 10)
 
-            setResults(searchResults)
+            const data :Note[] = res.data.data.map(note => ({
+                id: note.id,
+                title: note.title,
+                content: note.content,
+                notebookId: note.notebook_id,
+                createdAt: new Date(note.created_at),
+                updatedAt: new Date(note.updated_at ?? note.created_at),
+            }))
+
+            setResults(data)
             setIsSearching(false)
         }, 300)
 

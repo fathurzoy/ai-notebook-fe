@@ -16,3 +16,12 @@ export interface UpdateNoteRequest {
 export interface UpdateNoteResponse {
   id : string
 }
+
+export interface GetSemanticSearchResponse {
+  id : string
+  title : string
+  content : string
+  notebook_id : string
+  created_at : string
+  updated_at : string | null
+}
